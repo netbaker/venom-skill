@@ -1,0 +1,35 @@
+{
+  "interests": [
+    "AI",
+    "编程",
+    "投资",
+    "健康",
+    "心理学",
+    "设计",
+    "哲学",
+    "科学",
+    "机器学习",
+    "数据分析",
+    "创业",
+    "写作",
+    "阅读",
+    "音乐",
+    "电影",
+    "旅行",
+    "美食",
+    "运动"
+  ],
+  "custom_sources": [
+    "D:\\笔记",
+    "D:\\项目",
+    "D:\\学习资料"
+  ],
+  "exclude_dirs": [
+    ".git",
+    "node_modules",
+    "__pycache__",
+    ".workbuddy"
+  ],
+  "max_preview_lines": 10,
+  "history_limit": 100
+}
