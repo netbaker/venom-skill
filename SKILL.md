@@ -10,8 +10,8 @@ created: 2026-06-14
 updated: 2026-06-15
 tags: [知识探索, 随机发现, 信息茧房, 知识关联, 达尔文进化, 智能猎食]
 license: MIT
-repository: https://github.com/workbuddy/venom
-homepage: https://workbuddy.cn/skills/venom
+repository: https://github.com/netbaker/venom-skill
+homepage: https://github.com/netbaker/venom-skill
 keywords: [知识探索, 随机发现, 信息茧房, 知识关联, 达尔文进化, 智能猎食, 学习工具, 知识管理]
 category: 学习工具
 platform: [Windows, macOS, Linux]
