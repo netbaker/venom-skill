@@ -4,14 +4,14 @@ description: |
   毒液 - 知识猎食者，打破信息茧房的知识探索技能。
   从5个知识源（脚本、笔记、兴趣、知识、MOC）随机抽取内容，帮助发现意想不到的知识关联。
   触发词：毒液、给我找点有意思的、我不知道想看什么、随机知识、打破信息茧房、知识探险、venom
-version: 2.1
+version: 5.0
 author: WorkBuddy
 created: 2026-06-14
-updated: 2026-06-15
-tags: [知识探索, 随机发现, 信息茧房, 知识关联, 达尔文进化, 智能猎食]
+updated: 2026-06-24
+tags: [知识探索, 随机发现, 信息茧房, 知识关联, 达尔文进化, 智能猎食, 内容解读, 智能摘要, 杂交猎食, 收藏夹, 周报, Streak, 成就系统, Markdown导出]
 license: MIT
-repository: https://github.com/netbaker/venom-skill
-homepage: https://github.com/netbaker/venom-skill
+repository: https://github.com/workbuddy/venom
+homepage: https://workbuddy.cn/skills/venom
 keywords: [知识探索, 随机发现, 信息茧房, 知识关联, 达尔文进化, 智能猎食, 学习工具, 知识管理]
 category: 学习工具
 platform: [Windows, macOS, Linux]
