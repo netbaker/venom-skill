@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-毒液 v5 - 周报自动分发 + 连续猎食 streak 版
+毒液 v6 - AI 辅助网络搜索 + 扁平卡片目录
 适者生存，更有深度的猎食体验
-v4 基础上新增：连续猎食 Streak + 周报 Markdown 导出 + 成就系统
+v5 基础上新增：知识触手升级为 AI WebSearch 辅助搜索，卡片目录扁平化
 """
 
 import os
@@ -12,6 +12,9 @@ import json
 from pathlib import Path
 from datetime import datetime, timedelta
 import hashlib
+import urllib.request
+import urllib.parse
+import ssl
 
 
 class VenomGene:
@@ -450,35 +453,98 @@ class VenomEvolved:
         
         return interest, related_files
     
-    def get_random_knowledge(self):
-        """获取随机知识 - 升级版本"""
-        # 扩展知识库，按主题分类
-        knowledge_pool = [
-            ("量子计算", "一个量子比特可以同时处于0和1的叠加态，这让量子计算机能并行处理指数级的计算任务。"),
-            ("设计原理", "黄金比例 1:1.618 在自然界和艺术中无处不在，从向日葵的种子排列到帕特农神庙的建筑比例。"),
-            ("心理学", "锚定效应：人们做决策时会过度依赖第一个接收到的信息，即使这个信息与决策无关。"),
-            ("投资", "复利的魔力：年化10%的收益，7年翻倍，20年翻7倍，50年翻117倍。"),
-            ("编程", "递归的美：一个函数调用自身，就像两面镜子之间的无限反射，但必须有一个退出条件。"),
-            ("生物学", "人类大脑有860亿个神经元，每个神经元平均有7000个突触连接，总连接数比银河系的星星还多。"),
-            ("物理学", "熵增定律：宇宙的总熵永远在增加，这就是为什么时间只能向前流逝。"),
-            ("哲学", "忒修斯之船：如果一艘船的所有零件都被替换，它还是原来那艘船吗？"),
-            ("数学", "欧拉恒等式 e^(iπ) + 1 = 0 被誉为最美的数学公式，它将五个最重要的数学常数联系在一起。"),
-            ("神经科学", "大脑的可塑性：即使成年后，大脑仍然可以通过学习和练习重塑神经连接。"),
-            ("化学", "水的密度在4°C时最大，这就是为什么冰会浮在水面上——这个反常现象拯救了地球上的生命。"),
-            ("天文学", "宇宙的年龄是138亿年，但我们可观测的宇宙直径是930亿光年——因为宇宙本身在膨胀。"),
-            ("计算机科学", "图灵机是所有现代计算机的理论基础，它证明了有些问题是无法被任何算法解决的。"),
-            ("经济学", "机会成本：做任何选择的真正成本，是你放弃的那个选项的价值。"),
-            ("语言学", "萨丕尔-沃尔夫假说：语言决定思维。说不同语言的人，对世界的认知也不同。"),
-            ("艺术", "蒙娜丽莎的微笑之所以神秘，是因为达芬奇用了'晕涂法'，让嘴角的轮廓模糊不清。"),
-            ("历史", "印刷术的发明让知识民主化，互联网的发明让信息民主化，AI的发明正在让智能民主化。"),
-            ("医学", "安慰剂效应：即使药片是假的，只要病人相信它有效，身体就会产生真实的生理反应。"),
-            ("社会学", "邓巴数：人类能维持的稳定社交关系上限是150人——这就是为什么微信好友超过150个就开始混乱。"),
-            ("进化论", "人类和香蕉共享60%的DNA，和黑猩猩共享98.7%的DNA——生命的统一性令人惊叹。"),
-            ("人工智能", "AI 不是魔法，而是统计学和算力的结合——让机器从数据中找规律，而不是硬编码规则。"),
-            ("设计模式", "DRY原则：不要重复自己。如果一段逻辑出现了两次，就该考虑把它提取成一个函数。"),
-            ("系统思维", "系统思维关注整体而非局部——有时候最优的子组件加起来会产生最差的整体表现。"),
+    def get_random_knowledge(self, ai_assisted=True):
+        """获取随机知识 — AI 助手辅助网络搜索（方案三）
+        
+        Args:
+            ai_assisted: True = 让 AI 助手调用 WebSearch 工具搜索；
+                         False = 直接使用内置知识池（离线 fallback）
+        
+        Returns:
+            (topic, content, search_method) 或 fallback 时直接返回 (topic, content)
+        """
+        # ===== 候选话题池（用于网络搜索的 query） =====
+        topics = [
+            "量子计算 最新进展 2026",
+            "人工智能 AGI 突破",
+            "脑机接口 最新研究",
+            "可控核聚变 进展",
+            "量子纠缠 实验",
+            "基因编辑 CRISPR 医疗",
+            "火星探测 2026",
+            "区块链 Web3 监管",
+            "太空旅行 商业航天",
+            "深度学习 大模型",
+            "材料科学 石墨烯 应用",
+            "合成生物学 突破",
+            "纳米技术 医疗应用",
+            "气候变化 碳捕获技术",
+            "元宇宙 VR AR 头显",
+            "自动驾驶 L4 L5",
+            "数字孪生 工业4.0",
+            "神经科学 意识 解码",
+            "暗物质 暗能量 探测",
+            "6G 通信技术 标准",
+            "柔性电子 电子皮肤",
+            "脑启发计算 类脑芯片",
+            "光计算 光子芯片",
+            "拓扑量子计算",
+            "冷核聚变 争议",
+            "AlphaFold 蛋白质预测",
+            "人形机器人 Boston Dynamics",
+            "量子机器学习",
+            "合成免疫疗法 癌症",
+            "空间望远镜 韦伯",
         ]
-        return random.choice(knowledge_pool)
+        
+        # 随机选择一个搜索话题
+        query = random.choice(topics)
+        
+        # AI 辅助模式：返回查询信息，让 AI 助手来搜索
+        if ai_assisted:
+            return {
+                "method": "ai_assisted_web_search",
+                "query": query,
+                "topic_hint": query.split()[0],
+            }
+        
+        # 离线模式：使用内置知识池
+        fallback_pool = [
+            ("量子计算", "一个量子比特可以同时处于0和1的叠加态，这让量子计算机能并行处理指数级的计算任务。"),
+            ("设计原理", "黄金比例 1:1.618 在自然界和艺术中无处不在。"),
+            ("心理学", "锚定效应：人们做决策时会过度依赖第一个接收到的信息。"),
+            ("投资", "复利的魔力：年化10%的收益，7年翻倍。"),
+            ("编程", "递归的美：一个函数调用自身，像两面镜子之间的无限反射。"),
+            ("生物学", "人类大脑有860亿个神经元。"),
+            ("物理学", "熵增定律：宇宙的总熵永远在增加。"),
+            ("哲学", "忒修斯之船：如果一艘船的所有零件都被替换，它还是原来那艘船吗？"),
+            ("数学", "欧拉恒等式 e^(iπ) + 1 = 0 被誉为最美的数学公式。"),
+            ("天文学", "宇宙的年龄是138亿年，可观测直径是930亿光年。"),
+            ("人工智能", "AI 不是魔法，而是统计学和算力的结合。"),
+            ("系统思维", "系统思维关注整体而非局部。"),
+        ]
+        topic, content = random.choice(fallback_pool)
+        return (topic, content)
+    
+    @staticmethod
+    def build_knowledge_from_ai_search(ai_search_result):
+        """从 AI 助手的搜索结果构建知识内容
+        此方法由 AI 助手在调用 WebSearch 后调用，传入搜索结果文本
+        
+        Args:
+            ai_search_result: dict, 包含 {
+                "topic": str,        # 搜索话题
+                "content": str,      # 搜索结果内容（由 AI 填充）
+                "source_urls": list, # 来源 URL
+                "raw_snippets": list # 原始摘要列表
+            }
+        
+        Returns:
+            (topic, content)
+        """
+        topic = ai_search_result.get("topic", "新知")
+        content = ai_search_result.get("content", "")
+        return topic, content
     
     def scan_moc(self):
         """扫描Dashboard MOC"""
@@ -588,15 +654,27 @@ class VenomEvolved:
             }
         
         elif tentacle == "知识":
-            topic, content = self.get_random_knowledge()
-            expansion = IntelligentAnalyzer.expand_knowledge(topic, content)
+            knowledge_source = self.get_random_knowledge(ai_assisted=True)
             
-            result["content"] = {
-                "type": "knowledge",
-                "topic": topic,
-                "content": content,
-                "expansion": expansion
-            }
+            if isinstance(knowledge_source, dict) and knowledge_source.get("method") == "ai_assisted_web_search":
+                # AI 助手辅助模式：返回搜索查询，需要 AI 调 WebSearch
+                result["content"] = {
+                    "type": "ai_assisted_knowledge",
+                    "query": knowledge_source["query"],
+                    "topic_hint": knowledge_source["topic_hint"],
+                    "needs_ai_search": True,
+                    "help_text": f"需要 AI 助手帮忙搜索: \"{knowledge_source['query']}\""
+                }
+            else:
+                # 离线 fallback 模式
+                topic, content = knowledge_source
+                expansion = IntelligentAnalyzer.expand_knowledge(topic, content)
+                result["content"] = {
+                    "type": "knowledge",
+                    "topic": topic,
+                    "content": content,
+                    "expansion": expansion
+                }
         
         elif tentacle == "MOC":
             directories = self.scan_moc()
@@ -683,6 +761,11 @@ class VenomEvolved:
             
             if content.get('expansion'):
                 output += f"\n💡 延伸思考：{content['expansion']}\n"
+        
+        elif content["type"] == "ai_assisted_knowledge":
+            output += f"🌐 AI 助手网络搜索\n"
+            output += f"🔍 搜索查询：{content['query']}\n"
+            output += f"💡 提示：{content.get('help_text', '等待 AI 助手搜索结果...')}\n"
         
         elif content["type"] == "moc":
             output += f"🗂️ 目录探索\n"
@@ -789,14 +872,25 @@ class VenomEvolved:
             }
         
         elif tentacle == "知识":
-            topic, content = self.get_random_knowledge()
-            expansion = IntelligentAnalyzer.expand_knowledge(topic, content)
-            result["content"] = {
-                "type": "knowledge",
-                "topic": topic,
-                "content": content,
-                "expansion": expansion
-            }
+            knowledge_source = self.get_random_knowledge(ai_assisted=True)
+            
+            if isinstance(knowledge_source, dict) and knowledge_source.get("method") == "ai_assisted_web_search":
+                result["content"] = {
+                    "type": "ai_assisted_knowledge",
+                    "query": knowledge_source["query"],
+                    "topic_hint": knowledge_source["topic_hint"],
+                    "needs_ai_search": True,
+                    "help_text": f"需要 AI 助手帮忙搜索: \"{knowledge_source['query']}\""
+                }
+            else:
+                topic, content = knowledge_source
+                expansion = IntelligentAnalyzer.expand_knowledge(topic, content)
+                result["content"] = {
+                    "type": "knowledge",
+                    "topic": topic,
+                    "content": content,
+                    "expansion": expansion
+                }
         
         elif tentacle == "MOC":
             directories = self.scan_moc()
@@ -1302,6 +1396,110 @@ class VenomEvolved:
         return str(report_path), md
     
     # ========== 成就系统 (v5) ==========
+    
+    def save_hunt_card(self, result, feeded=True, score=None):
+        """保存单次猎食卡片为 Markdown 文件"""
+        now = datetime.now()
+        # 扁平化：直接放 cards/ 目录，不要子文件夹
+        cards_dir = self.skills_path / "cards"
+        cards_dir.mkdir(parents=True, exist_ok=True)
+        
+        card_path = cards_dir / f"毒液猎食-{now.strftime('%Y%m%d-%H%M')}.md"
+        
+        # 文件名不重复保护
+        original_path = card_path
+        counter = 1
+        while card_path.exists():
+            card_path = cards_dir / f"毒液猎食-{now.strftime('%Y%m%d-%H%M')}-{counter}.md"
+            counter += 1
+        card_path_exists = card_path != original_path
+        
+        tentacle = result["tentacle"]
+        content = result.get("content")
+        
+        # 构建卡片内容
+        md = f"# 🦑 毒液猎食卡 - {now.strftime('%Y-%m-%d')} {now.strftime('%H:%M')}\n\n"
+        md += f"- **触手**：{tentacle}（权重 {self.gene.tentacle_weights.get(tentacle, 0):.2f}）\n"
+        md += f"- **猎食ID**：{result['timestamp'][:19]}\n"
+        if score is not None:
+            md += f"- **评分**：{score:.1f} / 5.0\n"
+        if feeded:
+            md += f"- **状态**：已完成猎食（已适应度记录）\n"
+        else:
+            md += f"- **状态**：猎食中（暂未评分）\n"
+        md += "\n---\n\n"
+        
+        if content is None:
+            md += "这次猎物溜走了，换个方向试试？\n"
+        elif content["type"] == "script":
+            analysis = content["analysis"]
+            md += f"## 🐍 猎物：{content['name']}\n\n"
+            md += f"  - **类型**：{analysis.get('type', '未知')}\n"
+            if analysis.get("insight"):
+                md += f"  - **解读**：{analysis['insight']}\n"
+            if analysis.get("features"):
+                md += f"  - **特征**：{', '.join(str(f) for f in analysis['features'])}\n"
+            md += "\n"
+            if content.get("preview"):
+                md += f"```\n{content['preview'][:500]}\n```\n"
+            md += f"\n📂 位置：{content['path']}\n"
+        
+        elif content["type"] == "note":
+            analysis = content["analysis"]
+            md += f"## 📝 猎物：{analysis.get('title', '未命名')}\n\n"
+            md += f"  - **类型**：{analysis.get('type', '未知')}\n"
+            if analysis.get("insight"):
+                md += f"  - **解读**：{analysis['insight']}\n"
+            if analysis.get("key_topics"):
+                md += f"  - **主题**：{', '.join(analysis['key_topics'])}\n"
+            md += f"  - **字数**：{analysis.get('word_count', '?')} 字\n"
+            md += f"  - **修改**：{content.get('modified', '未知')}\n"
+            md += "\n"
+            if content.get("preview"):
+                md += f"```\n{content['preview'][:500]}\n```\n"
+            md += f"\n📂 位置：{content['path']}\n"
+        
+        elif content["type"] == "interest":
+            md += f"## 🎯 兴趣：{content['interest']}\n\n"
+            if content.get("hook"):
+                md += f"💡 {content['hook']}\n"
+            if content.get("files"):
+                md += f"\n📁 相关文件：\n"
+                for f in content['files'][:5]:
+                    md += f"   - {Path(f).name}\n"
+        
+        elif content["type"] == "knowledge":
+            md += f"## 📚 知识：{content['topic']}\n\n"
+            md += f"{content['content']}\n\n"
+            if content.get("expansion"):
+                md += f"💡 {content['expansion']}\n"
+        
+        elif content["type"] == "ai_assisted_knowledge":
+            md += f"## 🌐 AI 助手网络搜索\n\n"
+            md += f"- **搜索查询**：`{content['query']}`\n"
+            md += f"- **话题提示**：{content['topic_hint']}\n\n"
+            md += f"> 💡 需要 AI 助手调用 WebSearch 工具搜索以上查询，\n"
+            md += f"> 搜索结果将填入猎食卡片并生成解读。\n\n"
+            md += f"**下一步**：告诉我 `使用搜索结果`，我会搜索并补全这张卡片。\n"
+        
+        elif content["type"] == "moc":
+            md += f"## 🗂️ 目录：{content['name']}/\n\n"
+            md += f"- **文件数**：{content['total_items']}\n\n"
+            md += "**内容预览**：\n"
+            for name, size in content['files'][:10]:
+                size_str = f"({size:,} B)" if size > 0 else ""
+                md += f"  - {name} {size_str}\n"
+        
+        # 进化状态
+        status = self.gene.get_status()
+        md += f"\n---\n"
+        md += f"\n🧬 **进化状态** | 累计猎食 {int(status['total_hunts'])} 次 | 平均适应度 {status['avg_fitness']:.2f}\n"
+        
+        # 保存卡片
+        with open(card_path, 'w', encoding='utf-8') as f:
+            f.write(md)
+        
+        return str(card_path), md
     
     def check_achievements(self):
         """检查解锁成就"""
